@@ -1,0 +1,277 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@using System;
+@using System.Globalization;
+@inject IViewLocalizer Localizer
+@model Recharge_Test.Repository.ViewModels.DepositViewModel
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">@Localizer["Welcome"]</h1>
+    <div class="main mt-5">
+        <div class="row">
+            <div class="col-lg-6">
+                <div style="text-align:start !important" class="deposit">
+                    <form asp-action="Deposit" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        <div class="deposit-inside">
+                            <h4 class="text-primary font-weight-bold">1. @Localizer["Amount"]</h4>
+                            <br>
+                            <p>@Localizer["Select Amount"]</p>
+                            <div class="d-flex align-items-lg-center" id="amount_id">
+                                <input asp-for="Amount" type="radio" id="amount_1" name="amount" value="20000">
+                                <label for="html">20.000 VNĐ</label><br>
+                                <input asp-for="Amount" type="radio" id="amount_2" name="amount" value="50000">
+                                <label for="css">50.000 VNĐ</label><br>
+                                <input asp-for="Amount" type="radio" id="amount_3" name="amount" value="100000">
+                                <label for="javascript">100.000 VNĐ</label><br>
+                            </div>
+                            <br />
+                            <span class="font-weight-normal">@Localizer["Enter Amount"]</span>
+                            <input asp-for="Amount" type="number" class="ml-4" id="custom-value" onwheel="this.blur()" onchange="getInputAmount()"> VNĐ<br>
+                        </div>
+                        <div class="deposit-inside-2 mt-4">
+                            <h4 class="text-primary font-weight-bold">2. @Localizer["Select Foreign Currency"]</h4>
+                            <br>
+                            <select name="foreignCurrency" id="foreign_currency" asp-for="ForeignCurrency" required>
+                                <option selected="selected" disabled="disabled" value="0">@Localizer["Select foreign currency 2"]</option>
+                            </select>
+                            <br>
+                            <div class="font-weight-bold mt-4">
+                                @Localizer["Total"]
+                                <input type="hidden" id="totalValue" value="123" name="totalExchange" />
+                                <span id="total"></span>
+                            </div>
+                        </div>
+                        <div class="deposit-inside-3 mt-4">
+                            <h4 class="text-primary font-weight-bold">3. @Localizer["PAYMENT CONTENT 2"]</h4>
+                            <br>
+                            <input type="checkbox" id="payment_content_ip" asp-for="PaymentContent" onchange="paymentContent()">
+                            <label class="font-weight-bold mb-4">@Localizer["Payment Content"]</label>
+                            <br>
+                            <input type="text" id="payment_content_txt" asp-for="PaymentContent" onchange="paymentContent()" placeholder="@Localizer["Payment content for other purposes"]"></input>
+                        </div>
+                        <div class="deposit-inside-4 mt-4">
+                            <h4 class="text-primary font-weight-bold">4. @Localizer["ONLINE PAYMENT VIA MOMO"]</h4>
+                            <br>
+                            <input type="radio" asp-for="Payment" value="MoMo" required>
+                            <img src="~/img/momo.png" width="30" height="30" alt="momo">
+                            <input type="radio" asp-for="Payment" value="Appota" required>
+                            <img src="~/img/appota.png" width="30" height="30" alt="appota">
+                            <br>
+                        </div>
+                        <input type="checkbox" asp-for="AgreeToTerms" name="terms" value="true" required>
+                        <label class="font-weight-normal mt-4 text-primary">@Localizer["I agree to the terms"]</label>
+                        <br>
+                        <button class="btn btn-danger" id="deposit" type="submit">@Localizer["Deposit"]</button>
+                    </form>
+
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="border">
+                    <div class="title-currency">
+                        <h4 class="text-danger font-weight-bold">@Localizer["TableDeposit"]</h4>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">@Localizer["Currency name"]</th>
+                                    <th scope="col">@Localizer["Currency code"]</th>
+                                    <th scope="col">@Localizer["Sell"]</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    //Gọi API và cập nhật tùy chọn trong select
+    async function fetchDataToStep2() {
+        try {
+            const response = await fetch(
+                "https://justcors.com/tl_a10cf1b/https://portal.vietcombank.com.vn/Usercontrols/TVPortal.TyGia/pXML.aspx?b=10",
+            );
+            if (!response.ok) {
+                throw new Error(`Response status: ${response.status}`);
+            }
+            const xmlData = await response.text();
+            // Sử dụng DOMParser để chuyển đổi XML thành một đối tượng Document
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlData, "application/xml");
+            // Tạo một mảng để lưu trữ dữ liệu JSON
+            const jsonArray = [];
+
+            // Lặp qua các phần tử trong XML và chuyển đổi thành JSON
+            const elements = xmlDoc.getElementsByTagName("Exrate");
+            for (let i = 0; i < elements.length; i++) {
+                const element = elements[i];
+                const currencyCode = element.getAttribute("CurrencyCode");
+                const currencyName = element.getAttribute("CurrencyName");
+                const buy = element.getAttribute("Buy");
+                const transfer = element.getAttribute("Transfer");
+                const sell = element.getAttribute("Sell");
+
+                // Tạo một đối tượng JSON từ các thuộc tính XML
+                const jsonObject = {
+                    CurrencyCode: currencyCode,
+                    CurrencyName: currencyName,
+                    Buy: buy,
+                    Transfer: transfer,
+                    Sell: sell,
+                };
+                // Thêm đối tượng JSON vào mảng
+                jsonArray.push(jsonObject);
+            }
+            // In ra mảng JSON đã chuyển đổi từ XML
+            //console.log(jsonArray);
+
+            // Lặp qua các mục dữ liệu từ API và tạo các tùy chọn cho select
+            const selectElement = document.getElementById('foreign_currency');
+            jsonArray.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.CurrencyCode;
+                option.textContent = item.CurrencyCode;
+                option.setAttribute('name', item.Sell);
+                selectElement.appendChild(option);
+            });
+
+            const tableBody = document.getElementById("tableBody");
+            // Lặp qua dữ liệu và tạo các phần tử tr
+            for (const item of jsonArray) {
+                const tr = document.createElement("tr");
+                const td1 = document.createElement("td");
+                td1.textContent = item.CurrencyName;
+                tr.appendChild(td1);
+                const td2 = document.createElement("td");
+                td2.textContent = item.CurrencyCode;
+                tr.appendChild(td2);
+                const td3 = document.createElement("td");
+                td3.textContent = item.Sell + ' ' + 'VNĐ';
+                tr.appendChild(td3);
+                tableBody.appendChild(tr);
+            }
+        }
+        catch (error) {
+            console.error('Error with:', error);
+        }
+    }
+    fetchDataToStep2();
+
+    //Dùng onchange chạy hàm getAmount()
+    document.getElementById('amount_id').addEventListener("change", getAmount);
+    let am = document.getElementsByName('amount');
+    let cv = document.getElementById('custom-value')
+    function getAmount() {
+        if (!!cv.value && !!am.value) {
+            // Kiểm tra tồn tại cv.value
+            cv.value = ''
+        } else {
+            for (i = 0; i < am.length; i++) {
+                if (am[i].checked === true) {
+                    return am[i].value
+                }
+            }
+        }
+    }
+
+    function getInputAmount() {
+        // Kiểm tra chuỗi rỗng hoặc null
+        if (!!cv.value) {
+            for (i = 0; i < am.length; i++) {
+                if (am[i].checked === true) {
+                    am[i].checked = false
+                }
+            }
+            return cv.value
+        }
+    }
+
+    function rateExchanges() {
+        const re = document.getElementById('foreign_currency');
+        const tot = document.getElementById('total');
+        const totValue = document.getElementById('totalValue');
+
+        // Lắng nghe sự kiện thay đổi cho cả foreign_currency, am và cv
+        re.addEventListener('change', updateTotal);
+        for (let i = 0; i < am.length; i++) {
+            am[i].addEventListener('change', updateTotal);
+        }
+        cv.addEventListener('change', updateTotal);
+
+        function updateTotal() {
+            const a = getAmount();
+            const b = getInputAmount();
+
+            if (a != null || b != null) {
+                // Lấy phần tử option được chọn
+                const selectedOption = re.querySelector('option:checked');
+                // Lấy giá trị thuộc tính "name" của option được chọn
+                selectedOptionName = selectedOption.getAttribute('name');
+                const cur = (selectedOptionName).replace(/,/g, '');
+                const amValue = parseFloat(a ? a : b);
+                const total = amValue / parseFloat(cur);
+                tot.innerHTML = total ? total.toFixed(2) : '';
+                tot.setAttribute('name', 'total');
+                totValue.value = total ? total.toFixed(2) : '';
+                return total ? total.toFixed(2) : '';
+            } else {
+                const firstOption = re.querySelector('option:first-child');
+                firstOption.selected = true;
+                alert('Chưa chọn hoặc nhập số tiền.')
+            }
+        }
+        //const kq = updateTotal()
+        //return { kq, amValue, selectedOptionName };
+    }
+    rateExchanges();
+
+    function paymentContent() {
+        const pmInput = document.getElementById('payment_content_ip')
+        const pmTxt = document.getElementById('payment_content_txt')
+        if (!!pmInput || !!pmTxt) {
+            if (pmInput.checked === true) {
+                const pm = 'Đã có nội dung thanh toán.'
+                pmInput.value = pm;
+                return pm
+            }
+            if (!!pmTxt) {
+                const cc = pmTxt.value;
+                pmTxt.value = cc
+                return pmTxt.value;
+            }
+        } else {
+            alert('Nhập nội dung thanh toán.')
+        }
+    }
+
+    //async function getData() {
+    //    const a = rateExchanges()
+    //    const b = paymentContent()
+    //    const items = [];
+    //    items.push({
+    //        Amount: a.amValue,
+    //        TotalEx: a.kq,
+    //        ForeignCurrency: a.selectedOptionName,
+    //        PmContent: b,
+    //    })
+    //    try {
+    //        await fetch('/Home/DepositWithMomo', {
+    //            method: 'POST',
+    //            headers: {
+    //                'Content-Type': 'application/json'
+    //            },
+    //            body: JSON.stringify(items)
+    //        })
+    //    } catch (e) {
+    //        console.log(e)
+    //    }
+    //}
+
+</script>

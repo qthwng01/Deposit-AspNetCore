@@ -1,0 +1,103 @@
+﻿@model IEnumerable<Recharge_Test.Repository.Models.Invoice>
+@using Microsoft.AspNetCore.Mvc.Localization
+@using System;
+@using System.Globalization;
+@inject IViewLocalizer Localizer
+@{
+    ViewData["Title"] = "StatisticalInvoices";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>@Localizer["Transaction history"]</h2>
+
+<select id="statusFilter" class="float-right mb-3 rounded" onchange="filterTable()">
+    <option value="all">@Localizer["All"]</option>
+    <option value="1">@Localizer["Success"]</option>
+    <option value="0">@Localizer["Failed"]</option>
+</select>
+<table class="table">
+    <thead>
+        <tr>
+            <th style="width:200px">
+                @Localizer["Customer name"]
+            </th>
+            <th style="width:166px">
+                @Localizer["Foreign currency"]
+            </th>
+            <th style="width:240px" >
+                @Localizer["Total amount"]
+            </th>
+            <th style="width:220px">
+                @Localizer["Total exchange"]
+            </th>
+            <th style="width:166px">
+                @Localizer["Note"]
+            </th>
+            <th style="width:166px">
+                @Localizer["Created date"]
+            </th>
+            <th style="width:166px">
+                @Localizer["Status"]
+            </th>
+        </tr>
+    </thead>
+    <tbody id="myTable">
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Customer.CustomerName)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.ForeignCurrency)
+                </td>
+                <td>
+                    @string.Format("{0:N0} VND", item.TotalAmount)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.TotalExchange)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Note)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.CreatedDate)
+                </td>
+                <td>
+                    @if (item.StatusId == 0)
+                    {
+                        <span class="badge badge-pill badge-success">@Localizer["Success"]</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge-pill badge-danger">@Localizer["Failed"]</span>
+                    }
+                </td>
+                <th>
+                    <a asp-action="InvoiceDetail" asp-route-id="@item.InvoicesId" style="font-size:25px;"><ion-icon name="search-circle-outline"></ion-icon></a>
+                </th>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<script>
+    function filterTable() {
+        var input, filter, table, tr, td, i;
+        input = document.getElementById("statusFilter");
+        filter = input.value;
+        table = document.getElementById("myTable");
+        tr = table.getElementsByTagName("tr");
+        for (i = 0; i < tr.length; i++) {
+            td = tr[i].getElementsByTagName("td")[6]; // Cột StatusId
+            if (td) {
+                var statusId = td.textContent.trim();
+                if (filter === "all" || statusId === filter) {
+                    tr[i].classList.remove("hide");
+                } else {
+                    tr[i].classList.add("hide");
+                }
+            }
+        }
+    }
+</script>
