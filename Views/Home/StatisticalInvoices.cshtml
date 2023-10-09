@@ -12,31 +12,31 @@
 
 <select id="statusFilter" class="float-right mb-3 rounded" onchange="filterTable()">
     <option value="all">@Localizer["All"]</option>
-    <option value="1">@Localizer["Success"]</option>
-    <option value="0">@Localizer["Failed"]</option>
+    <option value="@Localizer["Success"].Value">@Localizer["Success"]</option>
+    <option value="@Localizer["Failed"].Value">@Localizer["Failed"]</option>
 </select>
 <table class="table">
     <thead>
         <tr>
-            <th style="width:200px">
+            <th style="width: 240px">
                 @Localizer["Customer name"]
             </th>
-            <th style="width:166px">
+            <th style="width: 240px">
                 @Localizer["Foreign currency"]
             </th>
             <th style="width:240px" >
                 @Localizer["Total amount"]
             </th>
-            <th style="width:220px">
+            <th style="width: 240px">
                 @Localizer["Total exchange"]
             </th>
-            <th style="width:166px">
+            <th style="width: 240px">
                 @Localizer["Note"]
             </th>
-            <th style="width:166px">
+            <th style="width: 240px">
                 @Localizer["Created date"]
             </th>
-            <th style="width:166px">
+            <th style="width: 240px">
                 @Localizer["Status"]
             </th>
         </tr>

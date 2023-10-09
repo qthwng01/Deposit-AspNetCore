@@ -148,10 +148,10 @@
     <value>Thành công</value>
   </data>
   <data name="Total amount" xml:space="preserve">
-    <value>Tổng tiền thanh toán</value>
+    <value>Tổng tiền TT</value>
   </data>
   <data name="Total exchange" xml:space="preserve">
-    <value>Tổng tiền quy đổi</value>
+    <value>Tổng tiền QĐ</value>
   </data>
   <data name="Transaction history" xml:space="preserve">
     <value>Lịch sử giao dịch</value>
